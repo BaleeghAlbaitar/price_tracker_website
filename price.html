@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام تحليل ومقارنة أسعار المشتريات (بدون سيرفر)</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap & Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- SweetAlert2 & Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- القوائم المنسدلة للأصناف -->
+    <datalist id="repeatedItemsList"></datalist>
+
+    <!-- Header -->
+    <div class="page-header">
+        <div class="container-fluid px-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <h2 class="header-title">
+                    <i class="bi bi-graph-up-arrow"></i> نظام تحليل الأسعار المتقدم (محلي)
+                </h2>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-custom btn-icon" onclick="openCategoriesModal()">
+                        <i class="bi bi-diagram-3-fill"></i> الإعدادات (الأصناف والوحدات)
+                    </button>
+
+                    <div class="btn-group">
+                        <button class="btn btn-dark-custom btn-icon" onclick="saveCurrentPricesLocally()">
+                            <i class="bi bi-save2-fill"></i> حفظ التحديث للإيصالات
+                        </button>
+                        <button type="button" class="btn btn-dark-custom dropdown-toggle dropdown-toggle-split"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="visually-hidden">خيارات أكثر</span>
+                        </button>
+                        <ul class="dropdown-menu shadow border-0" style="border-radius: 12px; font-size: 0.95rem;">
+                            <li><a class="dropdown-item py-2 fw-bold" href="#" onclick="exportDataBackup()"><i
+                                        class="bi bi-cloud-download text-primary me-2"></i> أخذ نسخة احتياطية
+                                    (تصدير)</a></li>
+                            <li><a class="dropdown-item py-2 fw-bold" href="#"
+                                    onclick="document.getElementById('importFile').click()"><i
+                                        class="bi bi-cloud-upload text-success me-2"></i> استعادة البيانات (استيراد)</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <input type="file" id="importFile" accept=".json" style="display:none"
+                        onchange="importDataBackup(event)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container-fluid px-4">
+        <div class="row">
+            <!-- المشتريات الحالية -->
+            <div class="col-xl-6 col-lg-12">
+                <div class="card">
+                    <div class="card-header current-purchases d-flex justify-content-between align-items-center">
+                        <span class="d-flex align-items-center gap-2">
+                            <i class="bi bi-cart-plus-fill fs-4"></i> فاتورة اليوم (المشتريات الحالية)
+                        </span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="currentTable">
+                                <thead>
+                                    <tr>
+                                        <th>اسم الصنف</th>
+                                        <th width="15%">الكمية</th>
+                                        <th width="15%">الوحدة</th>
+                                        <th width="20%">الإجمالي</th>
+                                        <th width="15%" class="text-center">سعر الوحدة</th>
+                                        <th width="5%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- المشتريات السابقة -->
+            <div class="col-xl-6 col-lg-12">
+                <div class="card">
+                    <div class="card-header old-purchases d-flex justify-content-between align-items-center">
+                        <span class="d-flex align-items-center gap-2">
+                            <i class="bi bi-clock-history fs-4"></i> أسعار الفاتورة السابقة
+                        </span>
+                        <button class="btn btn-sm btn-primary-custom btn-icon" onclick="loadOldPricesDirectly()">
+                            <i class="bi bi-box-arrow-in-down"></i> جلب الأسعار المحفوظة
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="oldTable">
+                                <thead>
+                                    <tr>
+                                        <th>اسم الصنف</th>
+                                        <th width="15%">الكمية</th>
+                                        <th width="15%">الوحدة</th>
+                                        <th width="20%">الإجمالي</th>
+                                        <th width="15%" class="text-center">سعر الوحدة</th>
+                                        <th width="5%"></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center my-4">
+            <button class="btn btn-success-custom btn-lg px-5 shadow-sm btn-icon" style="font-size: 1.15rem;"
+                onclick="compareData()">
+                <i class="bi bi-bar-chart-line-fill"></i> إجراء المقارنة وعرض النتائج
+            </button>
+        </div>
+
+        <!-- النتائج -->
+        <div class="row" id="resultsSection" style="display: none;">
+            <div class="col-12">
+                <div class="card shadow border-0" style="border-top: 5px solid var(--accent-green) !important;">
+                    <div class="card-header bg-transparent d-flex align-items-center gap-2"
+                        style="color: var(--accent-green);">
+                        <i class="bi bi-clipboard-data-fill fs-4"></i>
+                        <span>تقرير الفروقات والتحليل المالي</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0" id="resultsTable">
+                                <thead>
+                                    <tr>
+                                        <th>الصنف</th>
+                                        <th>السعر سابقاً</th>
+                                        <th>السعر اليوم</th>
+                                        <th>الفارق (الإفرادي)</th>
+                                        <th>الفارق الإجمالي للكمية</th>
+                                        <th class="text-center">مؤشر السعر</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Categories Management -->
+    <div class="modal fade" id="categoriesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-primary"><i class="bi bi-tags-fill"></i> إدارة قائمة الأصناف
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <button class="btn btn-outline-custom btn-sm btn-icon" onclick="openUnitsModal()">
+                            <i class="bi bi-boxes"></i> إدارة وتقسيم الوحدات المستعملة
+                        </button>
+                        <form class="d-flex gap-2" onsubmit="event.preventDefault(); addNewCategory();">
+                            <input type="text" id="newCatName" class="form-control" placeholder="اسم الصنف الجديد"
+                                required>
+                            <select id="newCatUnit" class="form-select w-50"></select>
+                            <button type="submit" class="btn btn-success-custom">إضافة</button>
+                        </form>
+                    </div>
+                    <div class="table-responsive border rounded-3" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-hover config-table mb-0" id="categoriesConfigTable">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>اسم الصنف</th>
+                                    <th>الوحدة الافتراضية</th>
+                                    <th width="20%">إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Units Management -->
+    <div class="modal fade" id="unitsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-success"><i class="bi bi-box-seam"></i> إدارة الوحدات المستعملة
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form class="d-flex gap-2 mb-4" onsubmit="event.preventDefault(); addNewUnit();">
+                        <input type="text" id="newUnitName" class="form-control"
+                            placeholder="اسم وحدة جديدة (مثال: درزن)" required>
+                        <button type="submit" class="btn btn-success-custom">إضافة</button>
+                    </form>
+                    <div class="list-group list-group-flush border rounded-3" id="unitsListContainer"
+                        style="max-height: 300px; overflow-y: auto;">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-custom w-100" onclick="configModalsBack()">رجوع لإدارة
+                        الأصناف</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+
+</html>
